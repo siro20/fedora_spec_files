@@ -25,7 +25,7 @@ Group:            Applications/Tools
 BuildRequires:  redhat-rpm-config
 BuildRequires:  sed
 
-Requires:       memconsole-coreboot-dkms == %{version}
+Requires:       coreboot-memconsole-dkms == %{version}
 Requires:       coreboot-table-dkms == %{version}
 
 %define desc These firmware drivers are used by Google's servers. They are only useful if you are working directly on one of their proprietary servers.
@@ -42,7 +42,7 @@ Requires:       coreboot-table-dkms == %{version}
 %install
 
 %undefine srcname
-%define srcname memconsole-coreboot
+%define srcname coreboot-memconsole
 
 # Load kernel module on boot
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d/
@@ -78,7 +78,7 @@ check_kernel_dir:
 	fi
 
 %{srcname}: check_kernel_dir clean
-	make -C \$(KERNELDIR) M=\${CURDIR} modules
+	make -C \$(KERNELDIR) M=\${CURDIR} KBUILD_EXTRA_SYMBOLS=${CURDIR}/../../../coreboot-table/%{version}/Module.symvers modules
 clean: check_kernel_dir
 	make -C \$(KERNELDIR) M=\${CURDIR} clean
 " > $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/Makefile
@@ -110,7 +110,7 @@ echo "%{srcname}-y := coreboot_table.o
 obj-m=%{srcname}.o 
 
 all: %{srcname}
-
+	cp Module.symvers ../
 check_kernel_dir:
 	@if [ ! -d \$(KERNELDIR) ]; then \
 		echo \"Unable to find the Linux source tree.\"; \
@@ -134,7 +134,7 @@ clean: check_kernel_dir
 %package -n %{srcname}-dkms
 
 Version:        %{version}
-Release:        %{?dist}
+Release:        1%{?dist}
 URL:            https://www.kernel.org/
 Summary:        Google Firmware coreboot tables
 License:        GPLv2
@@ -143,6 +143,7 @@ Requires:       dkms
 
 Requires:       kernel-devel >= %{version}
 Requires:       kernel >= %{version}
+Requires:       make
 
 %description -n %{srcname}-dkms
 %desc
@@ -165,13 +166,13 @@ dkms remove -m %{srcname} -v %{version} --all -q --rpm_safe_upgrade
 
 
 %undefine srcname
-%define srcname memconsole-coreboot
+%define srcname coreboot-memconsole
 
 
 %package -n %{srcname}-dkms
 
 Version:        %{version}
-Release:        %{?dist}
+Release:        1%{?dist}
 URL:            https://www.kernel.org/
 Summary:        Google Firmware memconsole
 License:        GPLv2
@@ -180,10 +181,13 @@ Requires:       dkms
 
 Requires:       kernel-devel >= %{version}
 Requires:       kernel >= %{version}
+Requires:       make
 Requires:       coreboot-table-dkms == %{version}
 
 %description -n %{srcname}-dkms
 %desc
+Exposes /sys/firmware/log which allows to read the boot log recorded by coreboot
+on every boot.
 
 %post -n %{srcname}-dkms
 dkms add -m %{srcname} -v %{version} -q --rpm_safe_upgrade
