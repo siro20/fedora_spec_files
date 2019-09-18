@@ -41,6 +41,29 @@ Requires:       coreboot-table-dkms == %{version}
 %build -n %{srcname}
 %install
 
+# Shared Makefile
+# Required as all modules need to be build at once to satisfy symvers
+mkdir -p $RPM_BUILD_ROOT/%{_usrsrc}/
+echo "coreboot-memconsole-y := memconsole.o memconsole-coreboot.o
+obj-m+=coreboot-memconsole.o
+
+coreboot-table-y := coreboot_table.o
+obj-m+=coreboot-table.o 
+
+all: check_kernel_dir
+	make -C \$(KERNELDIR) M=\${CURDIR} clean
+	make -C \$(KERNELDIR) M=\${CURDIR} modules
+
+check_kernel_dir:
+	@if [ ! -d \$(KERNELDIR) ]; then \
+		echo \"Unable to find the Linux source tree.\"; \
+		exit 1; \
+	fi
+
+clean: check_kernel_dir
+	make -C \$(KERNELDIR) M=\${CURDIR} clean
+" > $RPM_BUILD_ROOT/%{_usrsrc}/Makefile
+
 %undefine srcname
 %define srcname coreboot-memconsole
 
@@ -66,22 +89,7 @@ AUTOINSTALL=yes" > $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/dkms.conf
 cp drivers/firmware/google/* $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/
 
 # Install Makefile
-echo "%{srcname}-y := memconsole.o memconsole-coreboot.o
-obj-m=%{srcname}.o
-
-all: %{srcname}
-
-check_kernel_dir:
-	@if [ ! -d \$(KERNELDIR) ]; then \
-		echo \"Unable to find the Linux source tree.\"; \
-		exit 1; \
-	fi
-
-%{srcname}: check_kernel_dir clean
-	make -C \$(KERNELDIR) M=\${CURDIR} KBUILD_EXTRA_SYMBOLS=${CURDIR}/../../../coreboot-table/%{version}/Module.symvers modules
-clean: check_kernel_dir
-	make -C \$(KERNELDIR) M=\${CURDIR} clean
-" > $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/Makefile
+cp $RPM_BUILD_ROOT/%{_usrsrc}/Makefile $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/Makefile
 
 
 
@@ -106,24 +114,10 @@ AUTOINSTALL=yes" > $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/dkms.conf
 cp drivers/firmware/google/* $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/
 
 # Install Makefile
-echo "%{srcname}-y := coreboot_table.o
-obj-m=%{srcname}.o 
+cp $RPM_BUILD_ROOT/%{_usrsrc}/Makefile $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/Makefile
 
-all: %{srcname}
-	cp Module.symvers ../
-check_kernel_dir:
-	@if [ ! -d \$(KERNELDIR) ]; then \
-		echo \"Unable to find the Linux source tree.\"; \
-		exit 1; \
-	fi
-
-%{srcname}: check_kernel_dir clean
-	make -C \$(KERNELDIR) M=\${CURDIR} modules
-clean: check_kernel_dir
-	make -C \$(KERNELDIR) M=\${CURDIR} clean
-" > $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/Makefile
-
-
+# Remove Makefile template
+rm -f $RPM_BUILD_ROOT/%{_usrsrc}/Makefile
 
 %files
 
