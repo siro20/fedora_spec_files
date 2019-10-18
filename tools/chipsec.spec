@@ -108,6 +108,7 @@ License:        GPLv2
 Group:          System Environment/Kernel
 Requires:       dkms
 Requires:       nasm
+Requires:       make
 Supplements:    python3-%{srcname}
 
 %if "%{version}" == "1.3.5"
