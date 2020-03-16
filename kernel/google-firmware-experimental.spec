@@ -19,7 +19,7 @@ Release:          1%{?dist}
 Summary:          Experimental google Firmware Drivers, Kernel modules for memconsole and coreboot tables
 License:          GPLv2
 URL:              https://github.com/9elements/linux
-Source0:          https://github.com/9elements/linux/archive/linux-google_firmware_fmap2.zip
+Source0:          https://github.com/9elements/linux/archive/google_firmware_fmap2.zip
 Group:            Applications/Tools
 
 BuildRequires:  redhat-rpm-config
