@@ -12,8 +12,8 @@
 # published by the Open Source Initiative.
 
 %define srcname chipsec
-%define realversion 1.4.2
-%define dkmsversion 1.4.2
+%define realversion 1.4.8
+%define dkmsversion 1.4.8
 %global dkms_name %{srcname}
 
 Name:             %{srcname}
@@ -22,15 +22,12 @@ Release:          1%{?dist}
 Summary:          CHIPSEC is a framework for analyzing the security of PC platforms; see https://github.com/chipsec/chipsec
 License:          GPLv2
 URL:              https://github.com/chipsec/chipsec
-Source0:          https://github.com/chipsec/chipsec/archive/v%{version}.tar.gz
+Source0:          https://github.com/chipsec/chipsec/archive/%{version}.tar.gz
 Group:            Applications/Tools
 
 BuildRequires:  redhat-rpm-config
 BuildRequires:  python
 BuildRequires:  python3-devel
-BuildRequires:  kernel-core
-BuildRequires:  kernel-devel
-BuildRequires:  gcc
 BuildRequires:  make
 BuildRequires:  sed
 
@@ -61,6 +58,10 @@ cp -r drivers/linux/* $RPM_BUILD_ROOT/%{_usrsrc}/%{dkms_name}-%{version}/
 
 mkdir -p $RPM_BUILD_ROOT/%{_prefix}/share/doc/chipsec/
 mv $RPM_BUILD_ROOT/%{_prefix}/chipsec-manual.pdf $RPM_BUILD_ROOT/%{_prefix}/share/doc/chipsec/chipsec-manual.pdf
+
+mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d
+echo "chipsec
+" > $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d/chipsec.conf
 
 %files
 %{_bindir}/chipsec_main
@@ -109,6 +110,7 @@ Group:          System Environment/Kernel
 Requires:       dkms
 Requires:       nasm
 Requires:       make
+Requires:       gcc
 Supplements:    python3-%{srcname}
 
 %if "%{version}" == "1.3.5"
@@ -128,12 +130,6 @@ for i in `rpm -q --queryformat '%%{VERSION}-%%{RELEASE}.%%{ARCH} ' kernel-devel`
 do
   dkms build -m %{dkms_name} -v %{version} -k $i > /dev/null
   dkms install -m %{dkms_name} -v %{version} -k $i > /dev/null
-  if [ -e "/var/lib/dkms/%{dkms_name}/%{version}/$i/%{_arch}/module/%{dkms_name}.ko.xz" ]; then
-    ln -s "/var/lib/dkms/%{dkms_name}/%{version}/$i/%{_arch}/module/%{dkms_name}.ko.xz" "/var/lib/dkms/%{dkms_name}/%{version}/$i/%{_arch}/module/%{dkms_name}.ko"
-  fi
-  if [ -e "/lib/modules/$i/extra/chipsec.ko.xz" ]; then
-    ln -s "/lib/modules/$i/extra/chipsec.ko.xz" "/lib/modules/$i/extra/chipsec.ko"
-  fi
 done
 
 
@@ -145,6 +141,7 @@ fi
 
 %files -n %{srcname}-dkms
 %{_usrsrc}/%{dkms_name}-%{version}
+%{_sysconfdir}/modules-load.d/chipsec.conf
 
 %changelog
 * Mon Oct 14 2019 Patrick Rudolph <patrick.rudolph@9elements.com> Patchlevel 2:
