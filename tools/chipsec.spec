@@ -63,6 +63,16 @@ mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d
 echo "chipsec
 " > $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d/chipsec.conf
 
+echo 'MAKE="export KERNEL_SRC_DIR=${kernel_source_dir} && make -C ."
+CLEAN="export KERNEL_SRC_DIR=${kernel_source_dir} && make clean -C ."
+BUILT_MODULE_NAME=chipsec
+BUILT_MODULE_LOCATION=.
+PACKAGE_NAME=chipsec
+DEST_MODULE_LOCATION="/extra"
+PACKAGE_VERSION=%{version}
+REMAKE_INITRD=no
+AUTOINSTALL=no' > $RPM_BUILD_ROOT/%{_usrsrc}/%{dkms_name}-%{version}/dkms.conf
+
 %files
 %{_bindir}/chipsec_main
 %{_bindir}/chipsec_util
@@ -111,6 +121,8 @@ Requires:       dkms
 Requires:       nasm
 Requires:       make
 Requires:       gcc
+Requires:       flex
+Requires:       bison
 Supplements:    python3-%{srcname}
 
 %if "%{version}" == "1.3.5"
@@ -128,8 +140,8 @@ Requires:       kernel
 dkms add -m %{dkms_name} -v %{version} -q --rpm_safe_upgrade
 for i in `rpm -q --queryformat '%%{VERSION}-%%{RELEASE}.%%{ARCH} ' kernel-devel`;
 do
-  dkms build -m %{dkms_name} -v %{version} -k $i > /dev/null
-  dkms install -m %{dkms_name} -v %{version} -k $i > /dev/null
+  dkms build -m %{dkms_name} -v %{version} -k $i --kernelsourcedir=/usr/src/kernels/$i --config=/usr/src/kernels/$i/.config > /dev/null
+  dkms install -m %{dkms_name} -v %{version} -k $i --kernelsourcedir=/usr/src/kernels/$i > /dev/null
 done
 
 
