@@ -14,12 +14,12 @@
 %define srcname google-firmware-drivers-experimental-dkms
 
 Name:             %{srcname}
-Version:          4da2924b93299ada093d34b4b8a59722384edb0a
+Version:          ad7a47dee899db5687dcd5717b4e9b07d7f681ff
 Release:          1%{?dist}
 Summary:          Experimental google Firmware Drivers, Kernel modules for memconsole and coreboot tables
 License:          GPLv2
 URL:              https://github.com/9elements/linux
-Source0:          https://github.com/9elements/linux/archive/4da2924b93299ada093d34b4b8a59722384edb0a.tar.gz
+Source0:          https://github.com/9elements/linux/archive/ad7a47dee899db5687dcd5717b4e9b07d7f681ff.tar.gz
 Group:            Applications/Tools
 
 BuildRequires:  redhat-rpm-config
