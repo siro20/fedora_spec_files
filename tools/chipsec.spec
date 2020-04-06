@@ -30,6 +30,7 @@ BuildRequires:  python
 BuildRequires:  python3-devel
 BuildRequires:  make
 BuildRequires:  sed
+BuildRequires:  gcc
 
 Requires:       %{srcname}-doc = %{realversion}
 Requires:       python3-%{srcname} = %{realversion}
