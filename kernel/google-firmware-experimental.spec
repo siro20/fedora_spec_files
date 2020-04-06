@@ -14,12 +14,12 @@
 %define srcname google-firmware-drivers-experimental-dkms
 
 Name:             %{srcname}
-Version:          google_firmware_fmap2
+Version:          4da2924b93299ada093d34b4b8a59722384edb0a
 Release:          1%{?dist}
 Summary:          Experimental google Firmware Drivers, Kernel modules for memconsole and coreboot tables
 License:          GPLv2
 URL:              https://github.com/9elements/linux
-Source0:          https://github.com/9elements/linux/archive/google_firmware_fmap2.zip
+Source0:          https://github.com/9elements/linux/archive/4da2924b93299ada093d34b4b8a59722384edb0a.tar.gz
 Group:            Applications/Tools
 
 BuildRequires:  redhat-rpm-config
@@ -27,8 +27,6 @@ BuildRequires:  sed
 
 Requires:       coreboot-memconsole-experimental-dkms == %{version}
 Requires:       coreboot-table-experimental-dkms == %{version}
-Requires:       coreboot-fmap-experimental-dkms == %{version}
-Requires:       coreboot-bootmedia-experimental-dkms == %{version}
 
 %define desc These firmware drivers are used by Google's servers. They are only useful if you are working directly on one of their proprietary servers.
 
@@ -52,12 +50,6 @@ obj-m+=coreboot-memconsole-experimental.o
 
 coreboot-table-experimental-y := coreboot_table.o
 obj-m+=coreboot-table-experimental.o 
-
-coreboot-bootmedia-experimental-y := bootmedia-coreboot.o
-obj-m+=coreboot-bootmedia-experimental.o 
-
-coreboot-fmap-experimental-y := fmap-coreboot.o
-obj-m+=coreboot-fmap-experimental.o 
 
 all: check_kernel_dir
 	make -C \$(KERNELDIR) M=\${CURDIR} clean
@@ -91,7 +83,6 @@ BUILT_MODULE_LOCATION=.
 PACKAGE_NAME=%{srcname}
 DEST_MODULE_LOCATION=\"/extra\"
 PACKAGE_VERSION=%{version}
-REMAKE_INITRD=no
 AUTOINSTALL=yes" > $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/dkms.conf
 
 # Just copy files for DKMS
@@ -99,65 +90,6 @@ cp drivers/firmware/google/* $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/
 
 # Install Makefile
 cp $RPM_BUILD_ROOT/%{_usrsrc}/Makefile $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/Makefile
-
-
-
-%undefine srcname
-%define srcname coreboot-bootmedia-experimental
-
-# Load kernel module on boot
-mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d/
-echo "%{srcname}" > $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d/%{srcname}.conf
-
-# Create DKMS folder
-mkdir -p $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/
-
-# Install dkms.conf
-echo "MAKE=\"make -C . KERNELDIR=/lib/modules/\${kernelver}/build MACHINE=%{_arch}\"
-CLEAN=\"make clean -C . KERNELDIR=/lib/modules/\${kernelver}/build MACHINE=%{_arch}\"
-BUILT_MODULE_NAME=%{srcname}
-BUILT_MODULE_LOCATION=.
-PACKAGE_NAME=%{srcname}
-DEST_MODULE_LOCATION=\"/extra\"
-PACKAGE_VERSION=%{version}
-REMAKE_INITRD=no
-AUTOINSTALL=yes" > $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/dkms.conf
-
-# Just copy files for DKMS
-cp drivers/firmware/google/* $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/
-
-# Install Makefile
-cp $RPM_BUILD_ROOT/%{_usrsrc}/Makefile $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/Makefile
-
-
-
-%undefine srcname
-%define srcname coreboot-fmap-experimental
-
-# Load kernel module on boot
-mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d/
-echo "%{srcname}" > $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d/%{srcname}.conf
-
-# Create DKMS folder
-mkdir -p $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/
-
-# Install dkms.conf
-echo "MAKE=\"make -C . KERNELDIR=/lib/modules/\${kernelver}/build MACHINE=%{_arch}\"
-CLEAN=\"make clean -C . KERNELDIR=/lib/modules/\${kernelver}/build MACHINE=%{_arch}\"
-BUILT_MODULE_NAME=%{srcname}
-BUILT_MODULE_LOCATION=.
-PACKAGE_NAME=%{srcname}
-DEST_MODULE_LOCATION=\"/extra\"
-PACKAGE_VERSION=%{version}
-REMAKE_INITRD=no
-AUTOINSTALL=yes" > $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/dkms.conf
-
-# Just copy files for DKMS
-cp drivers/firmware/google/* $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/
-
-# Install Makefile
-cp $RPM_BUILD_ROOT/%{_usrsrc}/Makefile $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/Makefile
-
 
 
 %undefine srcname
@@ -207,6 +139,9 @@ Requires:       dkms
 Requires:       kernel-devel >= %{version}
 Requires:       kernel >= %{version}
 Requires:       make
+Requires:       gcc
+Requires:       flex
+Requires:       bison
 
 %description -n %{srcname}-dkms
 %desc
@@ -268,88 +203,12 @@ dkms remove -m %{srcname} -v %{version} --all -q --rpm_safe_upgrade
 %{_sysconfdir}/modules-load.d/%{srcname}.conf
 
 
-%undefine srcname
-%define srcname coreboot-fmap-experimental
-
-
-%package -n %{srcname}-dkms
-
-Version:        %{version}
-Release:        1%{?dist}
-URL:            https://www.kernel.org/
-Summary:        Experimental google Firmware FMAP
-License:        GPLv2
-Group:          System Environment/Kernel
-Requires:       dkms
-
-Requires:       kernel-devel >= %{version}
-Requires:       kernel >= %{version}
-Requires:       make
-Requires:       coreboot-table-experimental-dkms == %{version}
-
-%description -n %{srcname}-dkms
-%desc
-Exposes /sys/firmware/fmap which allows to read the current FMAP.
-
-%post -n %{srcname}-dkms
-dkms add -m %{srcname} -v %{version} -q --rpm_safe_upgrade
-for i in `rpm -q --queryformat '%%{VERSION}-%%{RELEASE}.%%{ARCH} ' kernel-devel`;
-do
-  dkms build -m %{srcname} -v %{version} -k $i > /dev/null
-  dkms install -m %{srcname} -v %{version} -k $i > /dev/null
-done
-
-%preun -n %{srcname}-dkms
-dkms remove -m %{srcname} -v %{version} --all -q --rpm_safe_upgrade
-
-%files -n %{srcname}-dkms
-%{_usrsrc}/%{srcname}-%{version}
-%{_sysconfdir}/modules-load.d/%{srcname}.conf
-
-
-%undefine srcname
-%define srcname coreboot-bootmedia-experimental
-
-
-%package -n %{srcname}-dkms
-
-Version:        %{version}
-Release:        1%{?dist}
-URL:            https://www.kernel.org/
-Summary:        Experimental google Firmware bootmedia
-License:        GPLv2
-Group:          System Environment/Kernel
-Requires:       dkms
-
-Requires:       kernel-devel >= %{version}
-Requires:       kernel >= %{version}
-Requires:       make
-Requires:       coreboot-table-experimental-dkms == %{version}
-Requires:       coreboot-fmap-experimental-dkms == %{version}
-
-%description -n %{srcname}-dkms
-%desc
-Exposes /sys/firmware/cbfs_active_partition which gives the name of the active CBFS
-partition.
-
-%post -n %{srcname}-dkms
-dkms add -m %{srcname} -v %{version} -q --rpm_safe_upgrade
-for i in `rpm -q --queryformat '%%{VERSION}-%%{RELEASE}.%%{ARCH} ' kernel-devel`;
-do
-  dkms build -m %{srcname} -v %{version} -k $i > /dev/null
-  dkms install -m %{srcname} -v %{version} -k $i > /dev/null
-done
-
-%preun -n %{srcname}-dkms
-dkms remove -m %{srcname} -v %{version} --all -q --rpm_safe_upgrade
-
-%files -n %{srcname}-dkms
-%{_usrsrc}/%{srcname}-%{version}
-%{_sysconfdir}/modules-load.d/%{srcname}.conf
-
-
 
 %changelog
+* Tue Mar 17 2020 Patrick Rudolph <patrick.rudolph@9elements.com> Patchlevel 3:
+- Removed no longer existing kernel modules
+- Switched to new branch
+
 * Tue Sep 17 2019 Patrick Rudolph <patrick.rudolph@9elements.com> Patchlevel 2:
 - Updated to kernel 5.0
 
