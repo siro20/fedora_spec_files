@@ -51,6 +51,9 @@ obj-m+=coreboot-memconsole-experimental.o
 coreboot-table-experimental-y := coreboot_table.o
 obj-m+=coreboot-table-experimental.o 
 
+coreboot-cbmem-experimental-y := cbmem-coreboot.o
+obj-m+=coreboot-cbmem-experimental.o
+
 all: check_kernel_dir
 	make -C \$(KERNELDIR) M=\${CURDIR} clean
 	make -C \$(KERNELDIR) M=\${CURDIR} modules
@@ -115,6 +118,33 @@ cp drivers/firmware/google/* $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/
 # Install Makefile
 cp $RPM_BUILD_ROOT/%{_usrsrc}/Makefile $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/Makefile
 
+echo "%{srcname}" > $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d/%{srcname}.conf
+
+%undefine srcname
+%define srcname coreboot-cbmem-experimental
+
+# Create DKMS folder
+mkdir -p $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/
+
+# Install dkms.conf
+echo "MAKE=\"make -C . KERNELDIR=/lib/modules/\${kernelver}/build MACHINE=%{_arch}\"
+CLEAN=\"make clean -C . KERNELDIR=/lib/modules/\${kernelver}/build MACHINE=%{_arch}\"
+BUILT_MODULE_NAME=%{srcname}
+BUILT_MODULE_LOCATION=.
+PACKAGE_NAME=%{srcname}
+DEST_MODULE_LOCATION=\"/extra\"
+PACKAGE_VERSION=%{version}
+REMAKE_INITRD=no
+AUTOINSTALL=yes" > $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/dkms.conf
+
+# Just copy files for DKMS
+cp drivers/firmware/google/* $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/
+
+# Install Makefile
+cp $RPM_BUILD_ROOT/%{_usrsrc}/Makefile $RPM_BUILD_ROOT/%{_usrsrc}/%{srcname}-%{version}/Makefile
+echo "%{srcname}" > $RPM_BUILD_ROOT/%{_sysconfdir}/modules-load.d/%{srcname}.conf
+
+
 
 # Remove Makefile template
 rm -f $RPM_BUILD_ROOT/%{_usrsrc}/Makefile
@@ -159,6 +189,7 @@ dkms remove -m %{srcname} -v %{version} --all -q --rpm_safe_upgrade
 
 %files -n %{srcname}-dkms
 %{_usrsrc}/%{srcname}-%{version}
+%{_sysconfdir}/modules-load.d/%{srcname}.conf
 
 
 
@@ -186,6 +217,45 @@ Requires:       coreboot-table-experimental-dkms == %{version}
 %desc
 Exposes /sys/firmware/log which allows to read the boot log recorded by coreboot
 on every boot.
+
+%post -n %{srcname}-dkms
+dkms add -m %{srcname} -v %{version} -q --rpm_safe_upgrade
+for i in `rpm -q --queryformat '%%{VERSION}-%%{RELEASE}.%%{ARCH} ' kernel-devel`;
+do
+  dkms build -m %{srcname} -v %{version} -k $i > /dev/null
+  dkms install -m %{srcname} -v %{version} -k $i > /dev/null
+done
+
+%preun -n %{srcname}-dkms
+dkms remove -m %{srcname} -v %{version} --all -q --rpm_safe_upgrade
+
+%files -n %{srcname}-dkms
+%{_usrsrc}/%{srcname}-%{version}
+%{_sysconfdir}/modules-load.d/%{srcname}.conf
+
+
+%undefine srcname
+%define srcname coreboot-cbmem-experimental
+
+
+%package -n %{srcname}-dkms
+
+Version:        %{version}
+Release:        1%{?dist}
+URL:            https://www.kernel.org/
+Summary:        Experimental google Firmware cbmem
+License:        GPLv2
+Group:          System Environment/Kernel
+Requires:       dkms
+
+Requires:       kernel-devel >= %{version}
+Requires:       kernel >= %{version}
+Requires:       make
+Requires:       coreboot-table-experimental-dkms == %{version}
+
+%description -n %{srcname}-dkms
+%desc
+Exposes /sys/bus/coreboot/drivers/cbmem/
 
 %post -n %{srcname}-dkms
 dkms add -m %{srcname} -v %{version} -q --rpm_safe_upgrade
