@@ -12,8 +12,8 @@
 # published by the Open Source Initiative.
 
 %define srcname chipsec
-%define realversion 1.4.8
-%define dkmsversion 1.4.8
+%define realversion 1.5.0
+%define dkmsversion 1.5.0
 %global dkms_name %{srcname}
 
 Name:             %{srcname}
@@ -130,8 +130,8 @@ Supplements:    python3-%{srcname}
 Requires:       kernel-devel < 4.15.0
 Requires:       kernel < 4.15.0
 %else
-Requires:       kernel-devel
-Requires:       kernel
+Requires:       kernel-devel < 5.7.0
+Requires:       kernel < 5.7.0
 %endif
 
 %description -n %{srcname}-dkms
@@ -141,8 +141,10 @@ Requires:       kernel
 dkms add -m %{dkms_name} -v %{version} -q --rpm_safe_upgrade
 for i in `rpm -q --queryformat '%%{VERSION}-%%{RELEASE}.%%{ARCH} ' kernel-devel`;
 do
-  dkms build -m %{dkms_name} -v %{version} -k $i --kernelsourcedir=/usr/src/kernels/$i --config=/usr/src/kernels/$i/.config > /dev/null
-  dkms install -m %{dkms_name} -v %{version} -k $i --kernelsourcedir=/usr/src/kernels/$i > /dev/null
+  if [ $(echo $i|cut -d. -f1) -gt 5 ]; then continue; fi
+  if [ $(echo $i|cut -d. -f2) -gt 6 ]; then continue; fi
+  dkms build -m %{dkms_name} -v %{version} -q -k $i --kernelsourcedir=/usr/src/kernels/$i --config=/usr/src/kernels/$i/.config > /dev/null
+  dkms install -m %{dkms_name} -v %{version} -q -k $i --kernelsourcedir=/usr/src/kernels/$i > /dev/null
 done
 
 
